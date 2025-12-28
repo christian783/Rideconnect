@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+.vscode
+.mvn
+target
+logs
+*.log
+.env
+*.iml
+.classpath
+.project
+.settings
+HELP.md

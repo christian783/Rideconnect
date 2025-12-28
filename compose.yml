@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: rideconnect-db
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - rideconnect-network
+    ports:
+      - "9000:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/echo-sols-ltd/rideconnect-backend:latest
+    container_name: rideconnect-app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    mem_limit: 1g
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - rideconnect-network
+
+volumes:
+  pg_data:
+  
+networks:
+  rideconnect-network:
+    driver: bridge
